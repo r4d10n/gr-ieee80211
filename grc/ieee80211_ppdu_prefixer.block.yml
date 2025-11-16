@@ -1,0 +1,59 @@
+id: ieee80211_ppdu_prefixer
+label: 802.11b PPDU Prefixer
+category: '[IEEE 802.11 GR-WiFi]'
+
+parameters:
+- id: rate
+  label: Rate
+  dtype: enum
+  default: '0'
+  options: ['0', '1', '2', '3', '4', '5', '6']
+  option_labels: ['1 Mbps Long', '2 Mbps Long', '5.5 Mbps Long', '11 Mbps Long',
+                   '2 Mbps Short', '5.5 Mbps Short', '11 Mbps Short']
+
+templates:
+  imports: from gnuradio import ieee80211
+  make: ieee80211.ppdu_prefixer(${rate})
+
+inputs:
+- domain: message
+  id: psdu_in
+  optional: true
+
+outputs:
+- domain: message
+  id: ppdu_out
+  optional: true
+
+documentation: |-
+  802.11b PPDU Prefixer - Adds PLCP Preamble and Header
+
+  This message-driven block receives PSDU (MAC frame) messages and prepends
+  the appropriate PLCP preamble and header according to IEEE 802.11b specification.
+
+  PLCP Components:
+    - SYNC: Long preamble (144 bits) or short preamble (72 bits)
+    - SFD: Start Frame Delimiter (0xF3A0 long, 0x05CF short)
+    - SIGNAL: Data rate indicator (0x0A/0x14/0x37/0x6E for 1/2/5.5/11 Mbps)
+    - SERVICE: Service field with length extension for 11 Mbps
+    - LENGTH: PSDU length in microseconds (automatically calculated)
+    - CRC-16: Header error detection
+
+  Features:
+    - 7-bit LFSR scrambling (polynomial x^7 + x^4 + 1)
+    - Automatic length calculation for each rate
+    - CRC-16 header protection (polynomial 0x0810)
+    - Support for all 7 rate/preamble combinations
+
+  Rate parameter:
+    0 = 1 Mbps with long preamble
+    1 = 2 Mbps with long preamble
+    2 = 5.5 Mbps with long preamble
+    3 = 11 Mbps with long preamble
+    4 = 2 Mbps with short preamble
+    5 = 5.5 Mbps with short preamble
+    6 = 11 Mbps with short preamble
+
+  Note: Short preamble is not available for 1 Mbps (IEEE 802.11b specification)
+
+file_format: 1

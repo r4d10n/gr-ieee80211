@@ -26,7 +26,12 @@ list(APPEND ieee80211_sources
     encode2_impl.cc
     pad_impl.cc
     modulation2_impl.cc
-    pad2_impl.cc )
+    pad2_impl.cc
+    utils.cc
+    wifi_rates.cc
+    dsss/chip_sync_c_impl.cc
+    dsss/ppdu_chip_mapper_bc_impl.cc
+    dsss/ppdu_prefixer.cc )
 
 set(ieee80211_sources "${ieee80211_sources}" PARENT_SCOPE)
 if(NOT ieee80211_sources)
@@ -70,6 +75,7 @@ include(GrTest)
 #include_directories()
 # List all files that contain Boost.UTF unit tests here
 list(APPEND test_ieee80211_sources
+    dsss/qa_dsss.cc
 )
 # Anything we need to link to for the unit tests go here
 list(APPEND GR_TEST_TARGET_DEPS gnuradio-ieee80211)

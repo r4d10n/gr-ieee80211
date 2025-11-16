@@ -24,5 +24,16 @@ install(FILES
     encode2.h
     pad.h
     modulation2.h
-    pad2.h DESTINATION include/gnuradio/ieee80211
+    pad2.h
+    wifi_rates.h
+    utils.h
+    DESTINATION include/gnuradio/ieee80211
+)
+
+# Install DSSS headers
+install(FILES
+    dsss/chip_sync_c.h
+    dsss/ppdu_chip_mapper_bc.h
+    dsss/ppdu_prefixer.h
+    DESTINATION include/gnuradio/ieee80211/dsss
 )
