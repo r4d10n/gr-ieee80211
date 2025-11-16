@@ -1,0 +1,958 @@
+options:
+  parameters:
+    author: GNU Radio / gr-ieee80211
+    catch_exceptions: 'True'
+    category: '[WiFi Demonstrators]'
+    cmake_opt: ''
+    comment: 'Complete demonstration of WiFi PHY evolution from 802.11b (1 Mbps) to
+      802.11ac (866 Mbps)
+
+
+      Features:
+
+      - Multi-standard support: 802.11b/a/g/n/ac
+
+      - Real-time statistics and visualization
+
+      - Interactive rate control
+
+      - Channel quality monitoring
+
+      - USRP or loopback operation'
+    copyright: ''
+    description: WiFi Evolution Demonstrator - All Standards (802.11b/a/g/n/ac)
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: .:.
+    id: wifi_evolution_demonstrator
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: WiFi Evolution Demonstrator
+    window_size: (2400,1800)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+# ============================================================================
+# Variables and Controls
+# ============================================================================
+
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: 11e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 12]
+    rotation: 0
+    state: enabled
+
+- name: wifi_standard
+  id: variable_qtgui_chooser
+  parameters:
+    comment: 'Select WiFi standard'
+    gui_hint: 0,0,1,2
+    label: WiFi Standard
+    label0: 802.11b DSSS/CCK
+    label1: 802.11a/g OFDM
+    label2: 802.11n HT
+    label3: 802.11ac VHT
+    label4: ''
+    labels: '[]'
+    num_opts: '4'
+    option0: '0'
+    option1: '1'
+    option2: '2'
+    option3: '3'
+    option4: '4'
+    options: '[0, 1, 2, 3]'
+    orient: Qt.QHBoxLayout
+    type: int
+    value: '0'
+    widget: combo_box
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [360, 12]
+    rotation: 0
+    state: enabled
+
+- name: dsss_rate
+  id: variable_qtgui_chooser
+  parameters:
+    comment: '802.11b rate selection'
+    gui_hint: 1,0,1,2
+    label: 802.11b Rate
+    label0: 1 Mbps Long
+    label1: 2 Mbps Long
+    label2: 5.5 Mbps Long
+    label3: 11 Mbps Long
+    label4: 2 Mbps Short
+    label5: 5.5 Mbps Short
+    label6: 11 Mbps Short
+    labels: '[]'
+    num_opts: '7'
+    option0: '0'
+    option1: '1'
+    option2: '2'
+    option3: '3'
+    option4: '4'
+    option5: '5'
+    option6: '6'
+    options: '[0, 1, 2, 3, 4, 5, 6]'
+    orient: Qt.QHBoxLayout
+    type: int
+    value: '0'
+    widget: combo_box
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [560, 12]
+    rotation: 0
+    state: true
+
+- name: ofdm_rate
+  id: variable_qtgui_chooser
+  parameters:
+    comment: '802.11a/g rate selection'
+    gui_hint: 2,0,1,2
+    label: 802.11a/g Rate
+    label0: 6 Mbps (BPSK 1/2)
+    label1: 9 Mbps (BPSK 3/4)
+    label2: 12 Mbps (QPSK 1/2)
+    label3: 18 Mbps (QPSK 3/4)
+    label4: 24 Mbps (16-QAM 1/2)
+    label5: 36 Mbps (16-QAM 3/4)
+    label6: 48 Mbps (64-QAM 2/3)
+    label7: 54 Mbps (64-QAM 3/4)
+    labels: '[]'
+    num_opts: '8'
+    option0: '0'
+    option1: '1'
+    option2: '2'
+    option3: '3'
+    option4: '4'
+    option5: '5'
+    option6: '6'
+    option7: '7'
+    options: '[0, 1, 2, 3, 4, 5, 6, 7]'
+    orient: Qt.QHBoxLayout
+    type: int
+    value: '0'
+    widget: combo_box
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 12]
+    rotation: 0
+    state: true
+
+- name: freq
+  id: variable_qtgui_range
+  parameters:
+    comment: 'WiFi frequency (2.4 GHz / 5 GHz bands)'
+    gui_hint: 3,0,1,2
+    label: Center Frequency (Hz)
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: 2.4e9
+    step: 5e6
+    stop: 5.9e9
+    value: 2.437e9
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1040, 12]
+    rotation: 0
+    state: enabled
+
+- name: tx_gain
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: 4,0,1,1
+    label: TX Gain (dB)
+    min_len: '100'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '1'
+    stop: '89'
+    value: '20'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1280, 12]
+    rotation: 0
+    state: enabled
+
+- name: rx_gain
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: 4,1,1,1
+    label: RX Gain (dB)
+    min_len: '100'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '1'
+    stop: '76'
+    value: '20'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1440, 12]
+    rotation: 0
+    state: enabled
+
+- name: packet_len
+  id: variable
+  parameters:
+    comment: ''
+    value: '100'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1600, 12]
+    rotation: 0
+    state: enabled
+
+- name: noise_voltage
+  id: variable_qtgui_range
+  parameters:
+    comment: 'Channel noise level'
+    gui_hint: 5,0,1,2
+    label: Noise Level
+    min_len: '100'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.001'
+    stop: '0.1'
+    value: '0.01'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1760, 12]
+    rotation: 0
+    state: enabled
+
+- name: threshold
+  id: variable_qtgui_range
+  parameters:
+    comment: 'DSSS correlation threshold'
+    gui_hint: 5,2,1,2
+    label: Correlation Threshold
+    min_len: '100'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0.5'
+    step: '0.1'
+    stop: '11.0'
+    value: '2.3'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1960, 12]
+    rotation: 0
+    state: enabled
+
+- name: enable_tx
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: 6,0,1,1
+    label: Enable TX
+    'true': '1'
+    type: int
+    value: 'True'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2160, 12]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# Source Blocks
+# ============================================================================
+
+- name: blocks_message_strobe_0
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Packet generator'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: pmt.cons(pmt.PMT_NIL, pmt.make_u8vector(packet_len, 0x42))
+    period: '100'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [24, 252]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# 802.11b DSSS/CCK Chain
+# ============================================================================
+
+- name: ieee80211_ppdu_prefixer_0
+  id: ieee80211_ppdu_prefixer
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'DSSS/CCK preamble and header'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    rate: dsss_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 252]
+    rotation: 0
+    state: enabled
+
+- name: ieee80211_ppdu_chip_mapper_bc_0
+  id: ieee80211_ppdu_chip_mapper_bc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'DSSS/CCK chip mapper'
+    length_tag_name: packet_len
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 260]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# 802.11a/g OFDM Chain
+# ============================================================================
+
+- name: ieee80211_encode_0
+  id: ieee80211_encode
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'OFDM encoder'
+    debug: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 420]
+    rotation: 0
+    state: enabled
+
+- name: ieee80211_modulation_0
+  id: ieee80211_modulation
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'OFDM modulation'
+    debug: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 420]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# Channel Selector
+# ============================================================================
+
+- name: blocks_selector_0
+  id: blocks_selector
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Select TX path based on standard'
+    enabled: 'True'
+    input_index: wifi_standard
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    num_outputs: '1'
+    output_index: '0'
+    showports: 'True'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 328]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# Channel Model
+# ============================================================================
+
+- name: analog_noise_source_x_0
+  id: analog_noise_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: noise_voltage
+    comment: 'AWGN channel noise'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_type: analog.GR_GAUSSIAN
+    seed: '0'
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 540]
+    rotation: 0
+    state: enabled
+
+- name: blocks_add_xx_0
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Add noise to signal'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1040, 344]
+    rotation: 0
+    state: enabled
+
+- name: channels_channel_model_0
+  id: channels_channel_model
+  parameters:
+    affinity: ''
+    alias: ''
+    block_tags: 'False'
+    comment: 'Multipath fading'
+    epsilon: '1.0'
+    freq_offset: '0.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_voltage: '0.0'
+    seed: '42'
+    taps: 1.0 + 0.0j
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1280, 308]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# Receiver Selector
+# ============================================================================
+
+- name: blocks_selector_1
+  id: blocks_selector
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Select RX path based on standard'
+    enabled: 'True'
+    input_index: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '1'
+    num_outputs: '2'
+    output_index: wifi_standard
+    showports: 'True'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1560, 328]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# 802.11b DSSS Receiver
+# ============================================================================
+
+- name: ieee80211_chip_sync_c_0
+  id: ieee80211_chip_sync_c
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'DSSS receiver'
+    long_preamble: dsss_rate < 4
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    threshold: threshold
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1800, 244]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# 802.11a/g OFDM Receiver
+# ============================================================================
+
+- name: ieee80211_sync_short_0
+  id: ieee80211_sync_short
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'OFDM sync'
+    debug: 'False'
+    log: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    min_plateau: '2'
+    threshold: '0.56'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1800, 404]
+    rotation: 0
+    state: enabled
+
+- name: ieee80211_demod_0
+  id: ieee80211_demod
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'OFDM demodulation'
+    debug: 'False'
+    log: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2040, 420]
+    rotation: 0
+    state: enabled
+
+- name: ieee80211_decode_0
+  id: ieee80211_decode
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'OFDM decoder'
+    debug: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2280, 428]
+    rotation: 0
+    state: enabled
+
+# ============================================================================
+# Debug and Visualization
+# ============================================================================
+
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'RX packet debug'
+    en_uvec: 'True'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2080, 252]
+    rotation: 0
+    state: enabled
+
+- name: blocks_message_debug_1
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'OFDM packet debug'
+    en_uvec: 'True'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2520, 436]
+    rotation: 0
+    state: enabled
+
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: 'TX Signal Visualization'
+    ctrlpanel: 'True'
+    entags: 'True'
+    grid: 'True'
+    gui_hint: 7,0,4,2
+    label1: I
+    label10: Signal 10
+    label2: Q
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: TX Signal
+    nconnections: '1'
+    size: '2048'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '2'
+    ymin: '-2'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1040, 460]
+    rotation: 0
+    state: enabled
+
+- name: qtgui_time_sink_x_1
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: 'RX Signal Visualization'
+    ctrlpanel: 'True'
+    entags: 'True'
+    grid: 'True'
+    gui_hint: 7,2,4,2
+    label1: I
+    label10: Signal 10
+    label2: Q
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: RX Signal
+    nconnections: '1'
+    size: '2048'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '2'
+    ymin: '-2'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1560, 460]
+    rotation: 0
+    state: enabled
+
+- name: qtgui_freq_sink_x_0
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: 'Spectrum Analyzer'
+    ctrlpanel: 'True'
+    fc: freq
+    fftsize: '2048'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: 11,0,4,4
+    label: Relative Gain
+    label1: TX Spectrum
+    label10: ''
+    label2: RX Spectrum
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: Spectrum Analyzer
+    nconnections: '2'
+    norm_window: 'False'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1280, 596]
+    rotation: 0
+    state: enabled
+
+connections:
+# TX Chain - DSSS
+- [blocks_message_strobe_0, strobe, ieee80211_ppdu_prefixer_0, in]
+- [ieee80211_ppdu_prefixer_0, '0', ieee80211_ppdu_chip_mapper_bc_0, '0']
+- [ieee80211_ppdu_chip_mapper_bc_0, '0', blocks_selector_0, '0']
+
+# TX Chain - OFDM
+- [blocks_message_strobe_0, strobe, ieee80211_encode_0, app in]
+- [ieee80211_encode_0, '0', ieee80211_modulation_0, '0']
+- [ieee80211_modulation_0, '0', blocks_selector_0, '1']
+
+# Channel
+- [blocks_selector_0, '0', blocks_add_xx_0, '0']
+- [blocks_selector_0, '0', qtgui_time_sink_x_0, '0']
+- [blocks_selector_0, '0', qtgui_freq_sink_x_0, '0']
+- [analog_noise_source_x_0, '0', blocks_add_xx_0, '1']
+- [blocks_add_xx_0, '0', channels_channel_model_0, '0']
+- [channels_channel_model_0, '0', blocks_selector_1, '0']
+- [channels_channel_model_0, '0', qtgui_time_sink_x_1, '0']
+- [channels_channel_model_0, '0', qtgui_freq_sink_x_0, '1']
+
+# RX Chain - DSSS
+- [blocks_selector_1, '0', ieee80211_chip_sync_c_0, '0']
+- [ieee80211_chip_sync_c_0, out, blocks_message_debug_0, print]
+
+# RX Chain - OFDM
+- [blocks_selector_1, '1', ieee80211_sync_short_0, '0']
+- [ieee80211_sync_short_0, '0', ieee80211_demod_0, '0']
+- [ieee80211_demod_0, out, ieee80211_decode_0, in]
+- [ieee80211_decode_0, out, blocks_message_debug_1, print]
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2
