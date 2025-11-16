@@ -1,0 +1,57 @@
+id: ieee80211_chip_sync_c
+label: 802.11b DSSS Packet Sink
+category: '[IEEE 802.11 GR-WiFi]'
+flags: throttle
+
+parameters:
+- id: long_preamble
+  label: Long Preamble
+  dtype: bool
+  default: 'True'
+- id: threshold
+  label: Correlation Threshold
+  dtype: float
+  default: '2.3'
+
+templates:
+  imports: from gnuradio import ieee80211
+  make: ieee80211.chip_sync_c(${long_preamble}, ${threshold})
+  callbacks:
+  - set_preamble_type(${long_preamble})
+
+inputs:
+- domain: stream
+  dtype: complex
+  label: in
+
+outputs:
+- domain: message
+  id: psdu_out
+  optional: true
+
+documentation: |-
+  802.11b DSSS/CCK Chip Synchronization and Packet Receiver
+
+  This block performs Barker code correlation-based synchronization on incoming
+  802.11b DSSS/CCK signals, demodulates the symbols, and outputs complete packets
+  via the message port.
+
+  Supported data rates:
+    - 1 Mbps (DBPSK with Barker spreading)
+    - 2 Mbps (DQPSK with Barker spreading)
+    - 5.5 Mbps (CCK with 4-bit encoding)
+    - 11 Mbps (CCK with 8-bit encoding)
+
+  Features:
+    - Barker code correlation for packet detection
+    - Phase-locked loop for carrier tracking
+    - Automatic rate detection from SIGNAL field
+    - PLCP header CRC-16 validation
+    - Both long and short preamble support
+
+  Parameters:
+    long_preamble: True for long preamble (144 bits), False for short (72 bits)
+    threshold: Correlation threshold for packet detection (0.0-11.0, default: 2.3)
+                Higher values reduce false positives but may miss weak packets
+
+file_format: 1

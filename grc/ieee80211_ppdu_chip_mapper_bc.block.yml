@@ -1,0 +1,54 @@
+id: ieee80211_ppdu_chip_mapper_bc
+label: 802.11b DSSS Chip Mapper
+category: '[IEEE 802.11 GR-WiFi]'
+
+parameters:
+- id: length_tag_name
+  label: Length Tag Name
+  dtype: string
+  default: packet_len
+
+templates:
+  imports: from gnuradio import ieee80211
+  make: ieee80211.ppdu_chip_mapper_bc(${length_tag_name})
+
+inputs:
+- domain: stream
+  dtype: byte
+  label: in
+
+outputs:
+- domain: stream
+  dtype: complex
+  label: out
+
+documentation: |-
+  802.11b DSSS/CCK Chip Mapper and Modulator
+
+  This block converts bytes to complex chip sequences for all 802.11b modulation
+  schemes. It reads bytes from the input stream and generates the appropriate
+  chip sequences based on the selected data rate (from stream tags).
+
+  Modulation schemes:
+    - 1 Mbps: DBPSK with 11-chip Barker spreading
+    - 2 Mbps: DQPSK with 11-chip Barker spreading
+    - 5.5 Mbps: CCK with 4-bit encoding (4 codes)
+    - 11 Mbps: CCK with 8-bit encoding (64 codes)
+
+  Features:
+    - Automatic rate detection from stream tags
+    - Barker code generation for DSSS (1/2 Mbps)
+    - CCK code generation for high-rate modes (5.5/11 Mbps)
+    - Differential phase encoding (DBPSK/DQPSK)
+    - Support for both long and short preambles
+
+  Input:
+    - Scrambled PPDU bytes (from ppdu_prefixer block)
+    - First byte contains rate tag (0-6)
+    - Stream tag with packet length
+
+  Output:
+    - Complex chip sequences ready for transmission
+    - Sample rate: 11 Msps for all rates
+
+file_format: 1

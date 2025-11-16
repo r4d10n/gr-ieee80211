@@ -26,7 +26,10 @@ list(APPEND ieee80211_sources
     encode2_impl.cc
     pad_impl.cc
     modulation2_impl.cc
-    pad2_impl.cc )
+    pad2_impl.cc
+    dsss/chip_sync_c_impl.cc
+    dsss/ppdu_chip_mapper_bc_impl.cc
+    dsss/ppdu_prefixer.cc )
 
 set(ieee80211_sources "${ieee80211_sources}" PARENT_SCOPE)
 if(NOT ieee80211_sources)

@@ -35,6 +35,9 @@ namespace py = pybind11;
     void bind_pad(py::module& m);
     void bind_modulation2(py::module& m);
     void bind_pad2(py::module& m);
+    void bind_chip_sync_c(py::module& m);
+    void bind_ppdu_chip_mapper_bc(py::module& m);
+    void bind_ppdu_prefixer(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 
@@ -77,5 +80,8 @@ PYBIND11_MODULE(ieee80211_python, m)
     bind_pad(m);
     bind_modulation2(m);
     bind_pad2(m);
+    bind_chip_sync_c(m);
+    bind_ppdu_chip_mapper_bc(m);
+    bind_ppdu_prefixer(m);
     // ) END BINDING_FUNCTION_CALLS
 }
