@@ -27,6 +27,8 @@ list(APPEND ieee80211_sources
     pad_impl.cc
     modulation2_impl.cc
     pad2_impl.cc
+    utils.cc
+    wifi_rates.cc
     dsss/chip_sync_c_impl.cc
     dsss/ppdu_chip_mapper_bc_impl.cc
     dsss/ppdu_prefixer.cc )
@@ -71,6 +73,7 @@ include(GrTest)
 
 # If your unit tests require special include paths, add them here
 #include_directories()
+    dsss/qa_dsss.cc
 # List all files that contain Boost.UTF unit tests here
 list(APPEND test_ieee80211_sources
 )
