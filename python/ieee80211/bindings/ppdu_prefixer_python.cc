@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(dsss/ppdu_prefixer.h)                                      */
-/* BINDTOOL_HEADER_FILE_HASH(auto)                                                 */
+/* BINDTOOL_HEADER_FILE_HASH(304a18959176a20148912995ac2c432a)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -60,10 +60,5 @@ void bind_ppdu_prefixer(py::module& m)
             "                5 = 5.5 Mbps short preamble\n"
             "                6 = 11 Mbps short preamble\n\n"
             "Returns:\n"
-            "    ppdu_prefixer: Shared pointer to PPDU prefixer block")
-
-        .def("get_rate", &ppdu_prefixer::get_rate,
-            "Get current rate configuration.\n\n"
-            "Returns:\n"
-            "    int: Current rate/preamble setting");
+            "    ppdu_prefixer: Shared pointer to PPDU prefixer block");
 }

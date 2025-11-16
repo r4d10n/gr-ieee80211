@@ -12,6 +12,7 @@
 #define INCLUDED_IEEE80211_WIFI_RATES_H
 
 #include <gnuradio/ieee80211/api.h>
+#include <iostream>
 #include <string>
 
 namespace gr {
@@ -75,6 +76,16 @@ enum class modulation_type {
     OFDM,               ///< Orthogonal Frequency Division Multiplexing
 };
 
+// Stream output operator for modulation_type (for testing/debugging)
+inline std::ostream& operator<<(std::ostream& os, const modulation_type& mod) {
+    switch (mod) {
+        case modulation_type::DSSS: return os << "DSSS";
+        case modulation_type::CCK:  return os << "CCK";
+        case modulation_type::OFDM: return os << "OFDM";
+        default:                    return os << "UNKNOWN";
+    }
+}
+
 /**
  * @brief Coding type enumeration
  */
@@ -83,6 +94,16 @@ enum class coding_type {
     BCC,                ///< Binary Convolutional Coding
     LDPC,               ///< Low-Density Parity Check (802.11n/ac)
 };
+
+// Stream output operator for coding_type (for testing/debugging)
+inline std::ostream& operator<<(std::ostream& os, const coding_type& code) {
+    switch (code) {
+        case coding_type::NONE: return os << "NONE";
+        case coding_type::BCC:  return os << "BCC";
+        case coding_type::LDPC: return os << "LDPC";
+        default:                return os << "UNKNOWN";
+    }
+}
 
 /**
  * @brief Rate information structure

@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(dsss/chip_sync_c.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(auto)                                                 */
+/* BINDTOOL_HEADER_FILE_HASH(b4a4dc5b4f5b5f3fffdc0eaee6c0a1b1)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>

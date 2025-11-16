@@ -86,7 +86,9 @@ if(NOT test_ieee80211_sources)
 endif(NOT test_ieee80211_sources)
 
 foreach(qa_file ${test_ieee80211_sources})
-    GR_ADD_CPP_TEST("ieee80211_${qa_file}"
+    # Extract filename without path and extension for test name
+    get_filename_component(qa_name ${qa_file} NAME_WE)
+    GR_ADD_CPP_TEST("ieee80211_${qa_name}"
         ${CMAKE_CURRENT_SOURCE_DIR}/${qa_file}
     )
 endforeach(qa_file)

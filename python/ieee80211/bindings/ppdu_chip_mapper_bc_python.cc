@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(dsss/ppdu_chip_mapper_bc.h)                                */
-/* BINDTOOL_HEADER_FILE_HASH(auto)                                                 */
+/* BINDTOOL_HEADER_FILE_HASH(21d5d04519da1b0cdfd365587143b1e2)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>

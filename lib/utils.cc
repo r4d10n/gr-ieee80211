@@ -14,6 +14,7 @@
 
 #include <gnuradio/ieee80211/utils.h>
 #include <cmath>
+#include <cstring>
 
 namespace gr {
 namespace ieee80211 {

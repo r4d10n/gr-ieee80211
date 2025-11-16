@@ -24,6 +24,20 @@ GR_PYTHON_CHECK_MODULE_RAW(
 
 include(GrPybind)
 
+# Find NumPy headers
+execute_process(
+    COMMAND python3 -c "import os; os.chdir('/tmp'); import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NUMPY_INCLUDE_DIR)
+    include_directories(${NUMPY_INCLUDE_DIR})
+else()
+    # Fallback to standard location
+    include_directories(/usr/lib/python3/dist-packages/numpy/core/include)
+endif()
+
 ########################################################################
 # Python Bindings
 ########################################################################
