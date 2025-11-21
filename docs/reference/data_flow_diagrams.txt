@@ -1,0 +1,462 @@
+================================================================================
+                    OFDM DATA FLOW DIAGRAMS - gr-ieee80211
+================================================================================
+
+1. HIGH-LEVEL TRANSMISSION CHAIN
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          802.11 TRANSMITTER CHAIN                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────┐
+  │  Application │
+  │    (PDU)     │
+  │ format=0/1/2 │
+  │ mcs=0-9      │
+  │ nss=1-2      │
+  │ len=0-4095   │
+  │ data bytes   │
+  └──────┬───────┘
+         │
+         │ uint8_t[pkt_len]
+         ↓
+  ┌──────────────────────────────────────┐
+  │         PKTGEN Block                  │
+  │  ──────────────────────────────      │
+  │  Message Port Handler                │
+  │  Tagged Stream Block                 │
+  │  - Queue packets                     │
+  │  - Extract parameters                │
+  │  - Calculate output length           │
+  │  Output: pkt_len + padding           │
+  └──────┬───────────────────────────────┘
+         │
+         │ uint8_t[] with Tags:
+         │  - format
+         │  - mcs0, nss0, len0
+         │  - seq
+         ↓
+  ┌──────────────────────────────────────┐
+  │      ENCODE (or ENCODE2) Block       │
+  │  ──────────────────────────────      │
+  │  State Machine:                      │
+  │   RDTAG → RDPKT → MOD → COPY → CLEAN │
+  │                                      │
+  │  Processing:                         │
+  │  1. Signal field generation          │
+  │  2. Service + Data + Pad bits        │
+  │  3. Scrambling (LFSR seed=93)        │
+  │  4. BCC Encoding (K=7, 1/2 rate)     │
+  │  5. Puncturing (1/2,2/3,3/4,5/6)     │
+  │  6. Bit Interleaving                 │
+  │  7. QAM Constellation Mapping        │
+  │  8. Generate output tags             │
+  │                                      │
+  │  Output: Chips (uint8_t indexes)     │
+  │          + Tags (signal bits)        │
+  └──────┬───────────────────────────────┘
+         │
+         │ uint8_t[] Chips
+         │ Tags: sigl, signl, sigb0
+         ↓
+  ┌──────────────────────────────────────┐
+  │    MODULATION (or MODULATION2)       │
+  │  ──────────────────────────────      │
+  │  State Machine:                      │
+  │   RDTAG → SIG → DATA → CLEAN         │
+  │                                      │
+  │  Processing:                         │
+  │  1. Read packet tags                 │
+  │  2. Signal field to QAM              │
+  │     - Chips → QAM constellation      │
+  │     - Insert pilots                  │
+  │     - Zero DC/guards                 │
+  │  3. Data symbol processing (per sym) │
+  │     - Map chips to QAM (BPSK-256QAM) │
+  │     - Insert 4 pilots                │
+  │     - Zero DC, guard bands           │
+  │     - Generate 64 complex samples    │
+  │  4. Padding symbols                  │
+  │  5. Generate output tags             │
+  │                                      │
+  │  Output: Complex samples             │
+  └──────┬───────────────────────────────┘
+         │
+         │ gr_complex[] OFDM Samples
+         │ 64 samples per symbol
+         │ (nSym + 2) symbols
+         ↓
+  ┌──────────────────────────────────────┐
+  │        PAD (or PAD2) Block           │
+  │  ──────────────────────────────      │
+  │  Processing:                         │
+  │  1. Prepend L-STF (10 symbols)       │
+  │     - BPSK training sequence         │
+  │  2. Prepend L-LTF (2 symbols)        │
+  │     - Training sequence              │
+  │  3. Scale signal and data symbols    │
+  │     - Normalize by sqrt(52)          │
+  │  4. Append padding symbols (2)       │
+  │                                      │
+  │  Output: Complete PPDU               │
+  │  Structure:                          │
+  │  [L-STF(10) + L-LTF(2) + Signal(1-3) │
+  │   + Data(1-256) + Pad(2)]            │
+  │                                      │
+  │  Total: 15-263 OFDM symbols          │
+  │  @ 20 MHz: 60-1052 µs                │
+  └──────┬───────────────────────────────┘
+         │
+         │ gr_complex[] RF-ready samples
+         │ 20 MHz sample rate (20e6 sps)
+         ↓
+  ┌──────────────────────────────────────┐
+  │        RF Frontend                   │
+  │  - Upsampling (optional)             │
+  │  - Frequency upconversion            │
+  │  - Power amplification               │
+  │  - Antenna transmission              │
+  └──────────────────────────────────────┘
+
+
+2. ENCODE BLOCK DETAILED FLOW
+================================================================================
+
+  Input Packet Data (uint8_t, LSB bit 0)
+  Format: 8-bit bytes with bits arranged LSB-first
+    Byte 0: [b7 b6 b5 b4 b3 b2 b1 b0]
+                     ↑ First bit transmitted
+
+         ↓
+  
+  ┌─ Signal Field Path ─────────────────────┐
+  │                                         │
+  │  Legacy Signal Bits (24 bits)           │
+  │  [MCS|Length|Reserved|Parity]          │
+  │           ↓                             │
+  │  BCC Encode @ 1/2 rate (48 bits)       │
+  │           ↓                             │
+  │  Interleave (bit permutation)          │
+  │           ↓                             │
+  │  Output: d_sigBitsIntedL[48]           │
+  │  (stored in tag: "sigl")               │
+  └─────────────────────────────────────────┘
+         ↓
+
+  ┌─ PSDU Data Path ────────────────────────┐
+  │                                         │
+  │  [Service (16) + Data (len×8) + Pad]   │
+  │           ↓                             │
+  │  Scramble @ seed=93                    │
+  │  LFSR polynomial: 1 + x^4 + x^7        │
+  │           ↓                             │
+  │  BCC Encode @ 1/2 rate                 │
+  │  Input: nSym × nDBPS                   │
+  │  Output: nSym × nDBPS × 2              │
+  │           ↓                             │
+  │  Puncture (rate matching)              │
+  │  Based on MCS coding rate              │
+  │           ↓                             │
+  │  Bit Interleave (per symbol)           │
+  │           ↓                             │
+  │  Bits → Chips (QAM mapping)            │
+  │           ↓                             │
+  │  Output: d_chips0[nSym × nCBPS]        │
+  └─────────────────────────────────────────┘
+
+  Both paths → Generate Tags (PMT dictionary)
+              └→ format, mcs0, nss0, len0, seq
+              └→ sigl, signl, sigb0
+
+  Output: uint8_t[] chips + Tags
+
+
+3. MODULATION BLOCK DETAILED FLOW
+================================================================================
+
+  Input: uint8_t[] Chips (Constellation Indices)
+  Tags: format, mcs0, nss0, len0, seq, sigl, signl, sigb0
+
+         ↓
+
+  ┌─ Signal Processing ─────────────────────┐
+  │                                         │
+  │  Legacy Signal (Legacy format only)     │
+  │  - Read 48 chips from tag "sigl"       │
+  │  - Map BPSK: chip=0→+1, chip=1→-1     │
+  │  - Insert pilots at FFT bins [7,21,43,57]
+  │  - Scale and output 64-point symbol    │
+  │                                         │
+  │  Non-Legacy Signal (HT/VHT)            │
+  │  - Read 96 chips from tag "signl"     │
+  │  - First 48: BPSK modulation          │
+  │  - Next 48: QBPSK or BPSK              │
+  │  - Insert pilots                       │
+  │  - Output multiple symbols             │
+  │                                         │
+  │  [VHT-SIG-B: Read from "sigb0" tag]   │
+  └─────────────────────────────────────────┘
+         ↓
+
+  ┌─ Data Symbol Generation ────────────────┐
+  │  (For each OFDM data symbol)            │
+  │                                         │
+  │  1. Read nSD chips from input stream    │
+  │     nSD = 48 (Legacy) or 52 (Non-Leg)  │
+  │                                         │
+  │  2. QAM Modulation                      │
+  │     Chips → Complex Constellation Points
+  │     BPSK:    1 chip → {+1, -1}         │
+  │     QPSK:    2 chips → 4 points        │
+  │     16-QAM:  4 chips → 16 points       │
+  │     64-QAM:  6 chips → 64 points       │
+  │     256-QAM: 8 chips → 256 points      │
+  │                                         │
+  │  3. Subcarrier Mapping                  │
+  │     QAM points → FFT bins               │
+  │     Data bins: 1-31, 33-59 (Legacy)    │
+  │     Data bins: 1-31, 33-59 (Non-Leg)   │
+  │                                         │
+  │  4. Pilot Insertion                     │
+  │     Bins [7, 21, 43, 57]                │
+  │     ← Pilots rotate per symbol          │
+  │                                         │
+  │  5. Null Subcarriers                    │
+  │     DC (bin 0): Zero                    │
+  │     Guards: Zero                        │
+  │                                         │
+  │  6. OFDM Symbol = 64 complex values    │
+  │                                         │
+  │  Output: d_sigl, d_signl, or data[]    │
+  │          64 complex samples per symbol │
+  │                                         │
+  │  Repeat for nSym symbols               │
+  └─────────────────────────────────────────┘
+         ↓
+
+  ┌─ Padding Symbols ───────────────────────┐
+  │  Generate 2 all-zero symbols           │
+  │  (For symbol boundary/timing)          │
+  │  Output: 2 × 64 complex zeros          │
+  └─────────────────────────────────────────┘
+         ↓
+
+  Output: gr_complex[] OFDM Samples
+  Total: (nSig + nSym + 2) × 64 complex values
+
+
+4. PAD BLOCK DETAILED FLOW
+================================================================================
+
+  Input: gr_complex[] Modulated Symbols
+  (Signal + Data + Padding from MODULATION)
+
+         ↓
+
+  ┌─ Preamble Generation ───────────────────┐
+  │  (Time domain via IFFT)                 │
+  │                                         │
+  │  Legacy STF (Short Training Field):     │
+  │  - 10 OFDM symbols @ 20 µs              │
+  │  - BPSK training sequence               │
+  │  - Autocorrelation peak detection       │
+  │  - Coarse frequency offset estimation   │
+  │                                         │
+  │  Legacy LTF (Long Training Field):      │
+  │  - 2 OFDM symbols @ 4 µs                │
+  │  - Known training sequence              │
+  │  - Fine frequency sync                  │
+  │  - Channel estimation (1x1 SISO)        │
+  │  - Phase tracking initialization        │
+  │                                         │
+  │  Pre-stored in d_preamblel0[400]       │
+  │  IFFT computed during initialization    │
+  └─────────────────────────────────────────┘
+         ↓
+
+  ┌─ Symbol Scaling ────────────────────────┐
+  │  Power normalization per symbol type:   │
+  │                                         │
+  │  Preamble:  Scale by 1/√12 / PAD_SCALE │
+  │  Signal:    Scale by 1/√52 / PAD_SCALE │
+  │  Data:      Scale by 1/√52 / PAD_SCALE │
+  │  Padding:   All zeros (no scaling)      │
+  │                                         │
+  │  Purpose: Maintain constant power       │
+  │  across PPDU for accurate AGC           │
+  └─────────────────────────────────────────┘
+         ↓
+
+  ┌─ Final PPDU Assembly ───────────────────┐
+  │  Output sequence:                       │
+  │  [L-STF(400 samples)] +                 │
+  │  [L-LTF(128 samples)] +                 │
+  │  [Signal Fields(64-384 samples)] +      │
+  │  [Data Payload(64*nSym samples)] +      │
+  │  [Padding(128 samples)]                 │
+  │                                         │
+  │  Total length:                          │
+  │  (12 + nSym) × 64 + 400 + 128 samples  │
+  │  ≈ 12 + nSym × 80 samples @ 20 MHz     │
+  │  ≈ (0.6 + nSym × 4.0) µs               │
+  └─────────────────────────────────────────┘
+         ↓
+
+  Output: gr_complex[] Complete RF Waveform
+  Ready for DA conversion and RF upconversion
+
+
+5. BIT ENCODING PIPELINE (Detailed)
+================================================================================
+
+  PSDU (Payload Service Data Unit)
+  ├─ Service Field (16 bits, all zeros)
+  ├─ MPDU (MAC Protocol Data Unit)
+  │  └─ Frame Control (2B)
+  │  └─ Duration/ID (2B)
+  │  └─ Address 1 (6B)
+  │  └─ Address 2 (6B)
+  │  └─ Address 3 (6B)
+  │  └─ Sequence Control (2B)
+  │  └─ [Address 4] (0/6B)
+  │  └─ QoS Control (0/2B)
+  │  └─ Frame Body (0-2304B)
+  │  └─ FCS/CRC (4B)
+  │
+  └─ Tail bits (6 bits, all zeros)
+  └─ Padding bits (align to CBPS)
+  └─ Total: (16 + data_bytes×8 + 6) bits
+             then padded to multiple of CBPS
+
+         ↓
+
+  Scrambler (7-tap LFSR)
+  Polynomial: 1 + x^4 + x^7
+  Seed: 0x5D (93 decimal)
+  
+  Generate sequence: [b6|b5|b4|b3|b2|b1|b0] → XOR taps [7,4] → output
+  
+  Whiten bit pattern → reduce spectral lines
+
+         ↓
+
+  BCC Encoder (Binary Convolutional Coder)
+  Constraint Length: K = 7
+  Code Rate: 1/2 (input 1 bit, output 2 bits)
+  
+  Trellis Diagram:
+  ┌─ Current State (6 bits) ─┐
+  │ [b6|b5|b4|b3|b2|b1|b0]  │
+  └──────────┬──────────────┘
+             │ Input bit
+             ↓
+  ┌─────────────────────────────────┐
+  │  Shift Register:                │
+  │  new_state = (input << 6) |     │
+  │             (state >> 1)        │
+  └────────┬────────────────────────┘
+           │
+      ┌────┴────┐
+      │          │
+      ↓          ↓
+   Output 0    Output 1
+   (G1 XOR)    (G2 XOR)
+   
+   G1: taps [6,5,3,0] = 0o133
+   G2: taps [6,5,4,2,0] = 0o171
+
+  Output: 2 × input length bits
+
+         ↓
+
+  Puncturer (Rate Matcher)
+  Remove selected bits per puncturing pattern
+  
+  Rate 1/2:   Keep all bits (pattern: all 1s)
+  Rate 2/3:   Remove every 3rd bit
+  Rate 3/4:   Remove per pattern [1,1,0,1,0,0]
+  Rate 5/6:   Remove per pattern [1,1,0,1,1,0,1,1,0,0]
+
+         ↓
+
+  Bit Interleaver
+  Two-stage permutation per OFDM symbol
+  
+  Stage 1 (Rotation):
+    i1 = (i_input × CBPS/16) mod CBPS
+  
+  Stage 2 (Rotation):
+    i_output = (i1 + floor(i1/8) × CBPS/8) mod CBPS
+  
+  Purpose: Break burst errors, spread across subcarriers
+
+         ↓
+
+  Bits → Chips (QAM Constellation Mapping)
+  
+  ┌─ Modulation Scheme ─────────┐
+  │ BPSK:     1 bit  → 1 chip   │
+  │ QPSK:     2 bits → 1 chip   │
+  │ 16-QAM:   4 bits → 1 chip   │
+  │ 64-QAM:   6 bits → 1 chip   │
+  │ 256-QAM:  8 bits → 1 chip   │
+  │                             │
+  │ Gray coding: adjacent       │
+  │ symbols differ by 1 bit     │
+  └─────────────────────────────┘
+
+  Output: Chips (uint8_t index into constellation)
+
+
+6. OFDM SYMBOL STRUCTURE
+================================================================================
+
+  Frequency Domain (after FFT):
+  ┌────────────────────────────────────────────────────────┐
+  │ Index  │ Content                    │ Count             │
+  ├────────────────────────────────────────────────────────┤
+  │   0    │ DC (NULL)                  │ 1                 │
+  │  1-5   │ Guard band (NULL)          │ 5                 │
+  │  6-31  │ Data/Pilot subcarriers     │ 26 (with pilots)  │
+  │ 32-39  │ Guard band (NULL)          │ 8                 │
+  │ 40-53  │ Data/Pilot subcarriers     │ 14 (with pilots)  │
+  │ 54-63  │ Guard band (NULL)          │ 10                │
+  └────────────────────────────────────────────────────────┘
+
+  Total Active: 48 subcarriers (44 data + 4 pilots)
+  Total FFT: 64 points
+  Null: 16 subcarriers
+
+  Pilot Locations:
+  ┌────────────────────────────────────────┐
+  │ Subcarrier │ FFT Index │ Frequency    │
+  ├────────────────────────────────────────┤
+  │ Pilot 1    │    7      │ -21 MHz      │
+  │ Pilot 2    │   21      │ +7 MHz       │
+  │ Pilot 3    │   43      │ -21 MHz      │
+  │ Pilot 4    │   57      │ +7 MHz       │
+  └────────────────────────────────────────┘
+  
+  (Indices relative to 64-point FFT, DC at center)
+
+  Time Domain (after IFFT):
+  ┌──────────────────────────────────────────┐
+  │ Guard Interval (CP) │ Useful Samples    │
+  │   16 samples        │   64 samples      │
+  │   0.8 µs @ 20MHz    │   3.2 µs @ 20MHz  │
+  ├──────────────────────────────────────────┤
+  │ Total Symbol Time: 4.0 µs                │
+  │ Samples per Symbol: 80                   │
+  └──────────────────────────────────────────┘
+
+  PPDU (Physical Protocol Data Unit) Structure:
+  ┌─────────────────────────────────────────────────────────┐
+  │ L-STF   │ L-LTF │ L-SIG │ [HT-SIG] │ [LTF] │ Data │ Pad │
+  │ 10 sym  │ 2 sym │ 1 sym │ 2 sym   │ n sym │ m sym│ 2sym│
+  │ 400 sa  │ 80 sa │ 64 sa │ 128 sa  │ 64n   │ 64m  │ 128 │
+  ├─────────────────────────────────────────────────────────┤
+  │ 20 µs   │ 4 µs  │3.2 µs │ 8 µs    │4n µs  │4m µs │ 6.4 │
+  │ Legacy Preamble    │ Signal Fields  │ Payload Section   │
+  └─────────────────────────────────────────────────────────┘
+

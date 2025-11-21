@@ -1,0 +1,257 @@
+================================================================================
+gr-ieee80211 BUILD SYSTEM HIERARCHY & DEPENDENCIES
+================================================================================
+
+                           TOP-LEVEL CMakeLists.txt
+                         (/home/user/gr-ieee80211/)
+                                    |
+                    ________________|________________
+                   |                |                |
+               Project Setup      Dependencies    Version Info
+               - CMake 3.8+       - GNU Radio 3.10+ - 1.0.0
+               - C++11/C          - UHD 3.9.7+    - Release Build
+               - Enable Testing   - FFT Component
+
+
+               CORE LIBRARY BUILD                OPTIONAL COMPONENTS
+                      |                                  |
+         lib/CMakeLists.txt                        |-----+-----|
+         (Compile C++)                            |            |
+              |                              Python/Bindings   GRC Blocks
+         Create gnuradio-ieee80211.so       (if ENABLE_PYTHON) (if ENABLE_PYTHON)
+              |                              |                  |
+         Dependencies:                   python/CMakeLists.txt  grc/CMakeLists.txt
+         - gnuradio-runtime             |                      |
+         - gnuradio-fft                 bindings/             Install 17 .yml
+         - UHD                          CMakeLists.txt         block definitions
+              |                          |                     to GRC directory
+         Sources (34 files):           Create ieee80211_python.so
+         - Core blocks (8)              (pybind11 bindings)
+         - Extended v2 (7)                  |
+         - Utilities (3)                Dependencies:
+         - DSSS/CCK (3)                 - pybind11
+         - Tests (1)                    - NumPy
+                                       - pygccxml
+
+
+                     HEADER FILES
+                   include/CMakeLists.txt
+                   Install 17 headers:
+                   - Core interfaces (14)
+                   - DSSS modules (3)
+                   to: include/gnuradio/ieee80211/
+
+
+                    DOCUMENTATION
+                    docs/CMakeLists.txt
+                    (if ENABLE_DOXYGEN)
+                    |
+                    doxygen/CMakeLists.txt
+                    |
+                    Generate HTML & XML docs
+                    Install to doc directory
+
+
+================================================================================
+DEPENDENCY TREE
+================================================================================
+
+   gr-ieee80211 (1.0.0)
+   |
+   +-- GNU Radio 3.10+ (REQUIRED)
+   |   +-- gnuradio-runtime (Core DSP framework)
+   |   +-- gnuradio-fft (FFT/IFFT blocks)
+   |   +-- CMake modules (GrVersion, GrPlatform, GrCompilerSettings, etc.)
+   |
+   +-- UHD 3.9.7+ (REQUIRED)
+   |   +-- USRP hardware interface
+   |
+   +-- Python 3.6+ (OPTIONAL)
+   |   +-- pybind11 (Python/C++ bindings)
+   |   +-- NumPy (Array handling)
+   |   +-- pygccxml (Header parsing for bindings)
+   |
+   +-- Build Tools (REQUIRED)
+   |   +-- CMake 3.8+
+   |   +-- C++ Compiler (C++11+)
+   |   +-- GNU Make
+   |   +-- pkg-config
+   |
+   +-- Documentation (OPTIONAL)
+       +-- Doxygen
+       +-- Graphviz (for diagrams)
+
+
+================================================================================
+BUILD PROCESS PIPELINE
+================================================================================
+
+Step 1: CONFIGURATION (cmake ../)
+        - Detect CMake version
+        - Find GNU Radio 3.10
+        - Find UHD 3.9.7+
+        - Detect Python/NumPy
+        - Configure install paths
+        - Load compiler settings
+
+Step 2: COMPILATION (make)
+        - Compile 34 C++ source files
+        - Generate 17 Python binding files
+        - Create gnuradio-ieee80211.so (shared library)
+        - Create ieee80211_python.so (Python module)
+        - Copy test modules to build/test_modules
+        - Compile C++ unit tests
+        - Build documentation (if Doxygen enabled)
+
+Step 3: TESTING (make test)
+        - Run C++ tests: ieee80211_qa_dsss
+        - Run Python tests: qa_trigger, qa_sync, qa_signal, ... (14 tests)
+
+Step 4: INSTALLATION (make install)
+        ├── Libraries
+        │   └── /usr/local/lib/gnuradio-ieee80211.so*
+        │
+        ├── Headers
+        │   └── /usr/local/include/gnuradio/ieee80211/*.h
+        │
+        ├── Python Bindings
+        │   └── /usr/local/lib/pythonX.Y/dist-packages/gnuradio/ieee80211/ieee80211_python.so
+        │
+        ├── GRC Blocks (17 files)
+        │   └── /usr/local/share/gnuradio/grc/blocks/*.block.yml
+        │
+        ├── CMake Config
+        │   └── /usr/local/lib/cmake/gnuradio-ieee80211/
+        │
+        └── Documentation
+            └── /usr/local/share/doc/gnuradio-ieee80211/
+
+
+================================================================================
+MODULE ORGANIZATION (34 C++ Source Files)
+================================================================================
+
+CORE WIFI BLOCKS (802.11a/g/n/ac)
+├── trigger_impl.cc          - Frame detection
+├── sync_impl.cc             - Time synchronization
+├── signal_impl.cc           - Signal field processing
+├── modulation_impl.cc       - QAM modulation
+├── demod_impl.cc            - OFDM demodulation
+├── decode_impl.cc           - Viterbi decoding
+├── encode_impl.cc           - BCC encoding
+└── cloud80211phy.cc         - Legacy PHY core
+
+EXTENDED BLOCKS v2 (MIMO Support)
+├── signal2_impl.cc          - Signal field v2
+├── demod2_impl.cc           - Demod v2 (MIMO-aware)
+├── encode2_impl.cc          - Encoder v2
+├── modulation2_impl.cc      - Modulation v2
+└── pad2_impl.cc             - Pad v2
+
+GENERATORS & UTILITIES
+├── pktgen_impl.cc           - Packet generator
+├── pad_impl.cc              - Legacy preamble padding
+├── utils.cc                 - Helper functions
+├── wifi_rates.cc            - WiFi rate tables
+└── wifi_stats_collector_impl.cc - Statistics (NEW)
+
+DSSS/CCK (802.11b Support - NEW)
+├── dsss/chip_sync_c_impl.cc
+├── dsss/ppdu_chip_mapper_bc_impl.cc
+└── dsss/ppdu_prefixer.cc
+
+UNIT TESTS
+└── dsss/qa_dsss.cc          - DSSS module tests
+
+
+================================================================================
+PYTHON BINDING FILES (17 Total)
+================================================================================
+
+trigger_python.cc           ppdu_chip_mapper_bc_python.cc
+sync_python.cc              ppdu_prefixer_python.cc
+signal_python.cc            signal2_python.cc
+modulation_python.cc        demod2_python.cc
+demod_python.cc             pktgen_python.cc
+decode_python.cc            encode2_python.cc
+encode_python.cc            pad2_python.cc
+chip_sync_c_python.cc       modulation2_python.cc
+                            python_bindings.cc (aggregates all)
+
+
+================================================================================
+PYTHON TEST SCRIPTS (14 Total)
+================================================================================
+
+qa_trigger.py       qa_signal2.py
+qa_sync.py          qa_demod2.py
+qa_signal.py        qa_pktgen.py
+qa_modulation.py    qa_encode2.py
+qa_demod.py         qa_pad.py
+qa_decode.py        qa_modulation2.py
+qa_encode.py        qa_pad2.py
+
+
+================================================================================
+GRC BLOCK DEFINITIONS (17 YAML Files)
+================================================================================
+
+ieee80211_trigger.block.yml         ieee80211_signal2.block.yml
+ieee80211_sync.block.yml            ieee80211_demod2.block.yml
+ieee80211_signal.block.yml          ieee80211_pktgen.block.yml
+ieee80211_modulation.block.yml      ieee80211_encode2.block.yml
+ieee80211_demod.block.yml           ieee80211_pad.block.yml
+ieee80211_decode.block.yml          ieee80211_modulation2.block.yml
+ieee80211_encode.block.yml          ieee80211_pad2.block.yml
+ieee80211_chip_sync_c.block.yml
+ieee80211_ppdu_chip_mapper_bc.block.yml
+ieee80211_ppdu_prefixer.block.yml
+
+
+================================================================================
+CMAKE CONFIGURATION FILES
+================================================================================
+
+Top Level
+├── CMakeLists.txt                      Project configuration
+
+Include
+├── include/gnuradio/ieee80211/CMakeLists.txt       Header installation
+
+Library
+├── lib/CMakeLists.txt                  Library & unit test configuration
+
+Python
+├── python/ieee80211/CMakeLists.txt                Python module
+└── python/ieee80211/bindings/CMakeLists.txt       pybind11 bindings
+
+Documentation
+├── docs/CMakeLists.txt                 Docs configuration
+└── docs/doxygen/CMakeLists.txt                    Doxygen setup
+
+GRC
+└── grc/CMakeLists.txt                  GRC block installation
+
+Apps
+└── apps/CMakeLists.txt                 Application/tool installation
+
+CMake Modules
+├── cmake/Modules/gnuradio-ieee80211Config.cmake
+├── cmake/Modules/targetConfig.cmake.in
+├── cmake/Modules/CMakeParseArgumentsCopy.cmake
+└── cmake/cmake_uninstall.cmake.in
+
+
+================================================================================
+KEY BUILD CUSTOMIZATION FLAGS
+================================================================================
+
+-DCMAKE_BUILD_TYPE=Release|Debug|RelWithDebInfo
+-DCMAKE_INSTALL_PREFIX=/usr/local
+-DENABLE_PYTHON=ON|OFF
+-DENABLE_DOXYGEN=ON|OFF
+-DCMAKE_CXX_FLAGS="-march=native"
+-DPYTHON_EXECUTABLE=/usr/bin/python3.9
+
+
+================================================================================
